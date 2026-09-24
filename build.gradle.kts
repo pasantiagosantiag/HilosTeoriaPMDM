@@ -19,12 +19,13 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     //implementation("org.bytedeco:openblas-platform:0.3.31-1.5.13")
     //implementation("org.bytedeco:opencv-platform:4.13.0-1.5.13")
-    implementation("org.bytedeco:javacv-platform:1.5.13")
+   // implementation("org.bytedeco:javacv-platform:1.5.13")
+    implementation("org.openpnp:opencv:4.9.0-0")
 
    // implementation("org.bytedeco:javacv-platform:1.5.13")
    // implementation("org.bytedeco:openblas-platform:0.3.31-1.5.13")
 
-    runtimeOnly("org.bytedeco:opencv:4.13.0-1.5.13:windows-x86_64")
+    //runtimeOnly("org.bytedeco:opencv:4.13.0-1.5.13:windows-x86_64")
 }
 
 tasks.test {

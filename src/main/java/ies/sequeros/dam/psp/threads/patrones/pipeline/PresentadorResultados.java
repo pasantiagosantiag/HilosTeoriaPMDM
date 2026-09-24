@@ -3,9 +3,9 @@ package ies.sequeros.dam.psp.threads.patrones.pipeline;
 import java.util.concurrent.BlockingQueue;
 
 public class PresentadorResultados implements Runnable {
-    private final BlockingQueue<Personaje> colaEntrada;
+    private final BlockingQueue<ImagenAnalizar> colaEntrada;
 
-    public PresentadorResultados(BlockingQueue<Personaje> colaEntrada) {
+    public PresentadorResultados(BlockingQueue<ImagenAnalizar> colaEntrada) {
         this.colaEntrada = colaEntrada;
     }
 
@@ -13,7 +13,7 @@ public class PresentadorResultados implements Runnable {
     public void run() {
         try {
             while (true) {
-                Personaje tarea = colaEntrada.take();
+                ImagenAnalizar tarea = colaEntrada.take();
                 if (tarea.getIdImagen().equals("FIN")) break;
 
                 System.out.println("[Resultado Final] Imagen: " + tarea.getIdImagen()

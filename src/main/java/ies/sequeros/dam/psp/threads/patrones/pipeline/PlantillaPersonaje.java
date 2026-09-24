@@ -1,6 +1,7 @@
 package ies.sequeros.dam.psp.threads.patrones.pipeline;
 
-import org.bytedeco.opencv.opencv_core.Mat;
+
+import org.opencv.core.Mat;
 
 public class PlantillaPersonaje {
     private Mat imagen;

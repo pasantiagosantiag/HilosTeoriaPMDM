@@ -2,8 +2,10 @@ package ies.sequeros.dam.psp.threads.patrones.pipeline;
 
 
 
-import org.bytedeco.opencv.global.opencv_imgcodecs;
-import org.bytedeco.opencv.opencv_core.Mat;
+
+
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +48,7 @@ public class RepositorioPlantilla {
                 }
             }).parallel().map(path1->{
                 String nombre=path1.getFileName().toString();
-                Mat img = opencv_imgcodecs.imread(path1.toString());
+                Mat img = Imgcodecs.imread(path1.toString(),Imgcodecs.IMREAD_GRAYSCALE);
                 String nombreSinExtension = nombre.contains(".")
                         ? nombre.substring(0, nombre.lastIndexOf('.'))
                         : nombre;
@@ -64,7 +66,7 @@ public class RepositorioPlantilla {
     }
 
 
-    private static boolean isImage(Path p) throws IOException {
+    public static boolean isImage(Path p) throws IOException {
         if (Files.notExists(p)){
             throw  new RuntimeException("El archivo no existe");
         }

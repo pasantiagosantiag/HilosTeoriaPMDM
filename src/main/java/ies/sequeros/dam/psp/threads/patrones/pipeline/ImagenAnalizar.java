@@ -1,19 +1,20 @@
 package ies.sequeros.dam.psp.threads.patrones.pipeline;
 
-import org.bytedeco.opencv.opencv_core.Mat;
 
-public class Personaje {
+import org.opencv.core.Mat;
+
+public class ImagenAnalizar {
 
         private final String idImagen;
         private String personajeDetectado;
         private Mat imagen;
-        public Personaje(String idImagen, String personajeDetectado) {
+        public ImagenAnalizar(String idImagen, String personajeDetectado) {
             this.idImagen = idImagen;
             this.personajeDetectado = personajeDetectado;
         }
         private double nivelCoincidencia;
 
-        public Personaje(String idImagen) {
+        public ImagenAnalizar(String idImagen) {
             this.idImagen = idImagen;
 
         }
@@ -24,6 +25,7 @@ public class Personaje {
             this.nivelCoincidencia = score;
         }
         public void setImagen(Mat imagen) {
+
             this.imagen = imagen;
         }
         public Mat getImagen() {
