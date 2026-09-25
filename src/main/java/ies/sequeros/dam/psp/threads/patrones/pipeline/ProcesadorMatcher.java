@@ -7,6 +7,7 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 
@@ -61,106 +62,75 @@ public class ProcesadorMatcher implements Runnable {
     public void run() {
         try {
             while (true) {
+                //se toma la siguiente imagen a analizar
                 ImagenAnalizar imagenAnalizar = colaEntrada.take();
-                if (imagenAnalizar.getIdImagen().equals("FIN")) {
-                    colaSalida.put(imagenAnalizar);
-                    break;
-                }
+                //si tiene el nombre de fin, se sale del bucle
+                if (analizarImagen(imagenAnalizar)) break;
 
-                System.out.println("Procesando matrices y buscando coincidencias en " + imagenAnalizar.getIdImagen());
-                final PlantillaPersonaje plantilla=this.repositorioPlantilla.getPlantillas().get(0);
-                // se busca
-                Mat result =new Mat();
-                try {
-                    final Mat grande = imagenAnalizar.getImagen();
-                    Mat caracter = plantilla.getImagen();
-                    Imgproc.matchTemplate(grande, caracter, result, Imgproc.TM_CCOEFF_NORMED);
-
-                    // 5. Encontrar la localización con el valor máximo/mínimo de coincidencia
-                    Core.MinMaxLocResult mmr = Core.minMaxLoc(result);
-                    double mejorScore = mmr.maxVal; // El valor estará entre -1.0 y 1.0 (si usa CCOEFF_NORMED)
-                    ResultadoComparar r=new ResultadoComparar(plantilla, imagenAnalizar, mejorScore);
-                    Double valor = r.getValor();
-                    String nombre = r.getPlantilla().getNombre();
-                    imagenAnalizar.setResultado(nombre, (int) (valor * 100));
-
-                    colaSalida.put(imagenAnalizar);
-                   /* opencv_imgproc.matchTemplate(
-                            src,                                   // Imagen grande donde buscar
-                            imagen,                // La cara de referencia del dibujo animado
-                            result,                                // La matriz donde OpenCV anotará las notas de parecido
-                            opencv_imgproc.CV_TM_CCOEFF_NORMED     // El algoritmo matemático de normalización (resultado entre 0 y 1)
-                    );*/
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-               /* System.out.println("se ha anaizado");
-                DoublePointer minVal = new DoublePointer(1);
-                DoublePointer maxVal = new DoublePointer(1);
-                Point minLoc = new Point();
-                Point maxLoc = new Point();
-                opencv_core.minMaxLoc(result,
-
-                        minVal, // Variable de salida para el valor mínimo (se pasa null si no interesa el peor resultado), es un PUNTERO
-                        maxVal,// idem con valor maximo
-                        minLoc,
-                        maxLoc,
-                        null //// Máscara opcional (al pasar null, OpenCV analiza la matriz 'result' por completo)
-                );
-                double mejorScore = mmr.maxVal.get(0); // El valor estará entre -1.0 y 1.0 (si usa CCOEFF_NORMED)
-                ResultadoComparar r=new ResultadoComparar(plantilla, imagenAnalizar, mejorScore);
-                Double valor = r.getValor();
-                String nombre = r.getPlantilla().getNombre();
-                imagenAnalizar.setResultado(nombre, (int) (valor * 100));
-                colaSalida.put(imagenAnalizar);*/
-                /*Optional<ResultadoComparar> r = this.repositorioPlantilla.getPlantillas().stream().map(plantilla -> {
-                    Mat result = null;
-                    System.out.println(plantilla.toString());
-                    opencv_imgproc.matchTemplate(
-                            src,                                   // Imagen grande donde buscar
-                            plantilla.getImagen(),                // La cara de referencia del dibujo animado
-                            result,                                // La matriz donde OpenCV anotará las notas de parecido
-                            opencv_imgproc.CV_TM_CCOEFF_NORMED     // El algoritmo matemático de normalización (resultado entre 0 y 1)
-                    );
-                    System.out.println("se ha anaizado");
-                    DoublePointer minVal = new DoublePointer(1);
-                    DoublePointer maxVal = new DoublePointer(1);
-                    Point minLoc = new Point();
-                    Point maxLoc = new Point();
-                    opencv_core.minMaxLoc(result,
-
-                            minVal, // Variable de salida para el valor mínimo (se pasa null si no interesa el peor resultado), es un PUNTERO
-                            maxVal,// idem con valor maximo
-                            minLoc,
-                            maxLoc,
-                            null //// Máscara opcional (al pasar null, OpenCV analiza la matriz 'result' por completo)
-                    );
-                    double mejorScore = maxVal.get(0); // El valor estará entre -1.0 y 1.0 (si usa CCOEFF_NORMED)
-                    return new ResultadoComparar(plantilla, imagenAnalizar, mejorScore);
-
-                }).max(Comparator.comparingDouble(a -> a.valor));
-                //si se ha encontrdo, siempre lo hará, ya que es valor maximo, se pasa al siguiente hilo
-                if (r.isPresent()) {
-                    Double valor = r.get().getValor();
-                    String nombre = r.get().getPlantilla().getNombre();
-                    imagenAnalizar.setResultado(nombre, (int) (valor * 100));
-                    System.out.println(imagenAnalizar.getPersonajeDetectado()+" "+imagenAnalizar.getNivelCoincidencia());
-                    colaSalida.put(imagenAnalizar);
-                }*/
-
-
-                // Simulación del resultado del matching
-                /*if (imagenAnalizar.getIdImagen().contains("homer")) {
-                    imagenAnalizar.setResultado("Homer Simpson", 0.92);
-                } else {
-                    imagenAnalizar.setResultado("Bart Simpson", 0.85);
-                }
-
-                colaSalida.put(imagenAnalizar);*/
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private boolean analizarImagen(ImagenAnalizar imagenAnalizar) throws InterruptedException {
+        if (imagenAnalizar.getIdImagen().equals("FIN")) {
+            colaSalida.put(imagenAnalizar);
+            return true;
+        }
+        final Mat grande = imagenAnalizar.getImagen();
+        final Mat grandeGris;
+        //se convierte a gris en caso de estar en color
+        if (grande.channels() == 3 || grande.channels() == 4) {
+
+            // Solo si tiene 3 o 4 canales (BGR/BGRA) convertimos a escala de grises
+            grandeGris = new Mat();
+            Imgproc.cvtColor(grande, grandeGris, Imgproc.COLOR_BGR2GRAY);
+        } else {
+            // Si ya tiene 1 canal (ya es escala de grises), clonamos la matriz directamente
+            grandeGris = grande.clone();
+        }
+
+        List<PlantillaPersonaje> plantillas = this.repositorioPlantilla.getPlantillas();
+        Optional<ResultadoComparar> r = buscarPersonaje(imagenAnalizar, plantillas, grande, grandeGris);
+        if (r.isPresent()) {
+            Double valor = r.get().getValor();
+            String nombre = r.get().getPlantilla().getNombre();
+            imagenAnalizar.setResultado(nombre, valor );
+           // System.out.println(imagenAnalizar.getPersonajeDetectado()+" "+imagenAnalizar.getNivelCoincidencia());
+            colaSalida.put(imagenAnalizar);
+        }
+        return false;
+    }
+
+    private Optional<ResultadoComparar> buscarPersonaje(ImagenAnalizar imagenAnalizar, List<PlantillaPersonaje> plantillas, Mat grande, Mat grandeGris) {
+        //se busca el mayor observar que el stream es paralelo
+        Optional<ResultadoComparar> r = plantillas.stream().parallel().map(plantilla -> {
+            Mat caracter = plantilla.getImagen();
+
+            //  Validar que la plantilla no sea mayor que la imagen origen
+            if (caracter.cols() > grande.cols() || caracter.rows() > grande.rows()) {
+                return new ResultadoComparar(plantilla, imagenAnalizar, -1.0);
+            }
+
+            //  Validar que ambas imágenes tengan el mismo tipo/canales
+            if (caracter.type() != grandeGris.type()) {
+                return new ResultadoComparar(plantilla, imagenAnalizar, -1.0);
+            }
+            Mat result = new Mat();
+            double mejorScore=-1.0;
+            try {
+                Imgproc.matchTemplate(grandeGris, caracter, result, Imgproc.TM_CCOEFF_NORMED);
+                Core.MinMaxLocResult mmr = Core.minMaxLoc(result);
+                mejorScore = mmr.maxVal;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                result.release();
+            }
+            return new ResultadoComparar(plantilla, imagenAnalizar, mejorScore);
+        }).max(Comparator.comparingDouble(a -> a.valor));
+        return r;
     }
 }

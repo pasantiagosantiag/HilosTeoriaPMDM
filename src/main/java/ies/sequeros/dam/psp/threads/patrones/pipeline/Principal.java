@@ -17,24 +17,9 @@ import java.util.stream.Collectors;
 
 public class Principal {
     public static void main(String[] args) throws IOException, InterruptedException {
-        String ruta_test="";
+        String ruta_test="./images_test";
         String ruta_repositorio="./images_repository";
         OpenCV.loadLocally();
-        /*Mat imagen = Imgcodecs.imread("/home/pedro/IdeaProjects/HilosTeoriaPMDM/images_test/a.jpg");
-
-        if (imagen.empty()) {
-            System.err.println("Error: No se pudo cargar la imagen. Revisa la ruta.");
-            return;
-        }
-
-        // 5. Mostrar información básica de la imagen en consola
-        System.out.println("¡Imagen cargada con éxito!");
-        System.out.println("Ancho (columnas): " + imagen.cols() + " px");
-        System.out.println("Alto (filas): " + imagen.rows() + " px");
-        System.out.println("Canales (ej. 3 para BGR): " + imagen.channels());*/
-
-        System.setProperty("org.bytedeco.javacpp.norgc", "true");
-
 
         //se cargan las imágenes de test en una lista
         Path path=Paths.get(ruta_test);
@@ -46,18 +31,18 @@ public class Principal {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            //se hace en paralelo, con hilos
         }).parallel().map( f1-> {return f1.toAbsolutePath().toString();
         }).collect(Collectors.toUnmodifiableList());
 
         //se carga el repositorio si todo es correcto
         RepositorioPlantilla repositorioPlantilla= new RepositorioPlantilla(ruta_repositorio);
-        repositorioPlantilla.getPlantillas().forEach( plantilla -> {
-            System.out.println(plantilla.getNombre());
-        });
+
         //se crean las estructura para pasar los datos, observar que son bloqueantes
         BlockingQueue<ImagenAnalizar> principalToLector = new LinkedBlockingQueue<>();
-        BlockingQueue<ImagenAnalizar> lectorToProcesador = new LinkedBlockingQueue<>();
-        BlockingQueue<ImagenAnalizar> procesadorToSalida = new LinkedBlockingQueue<>();
+        //se le da capacidad 5 para que se observe como se bloquean
+        BlockingQueue<ImagenAnalizar> lectorToProcesador = new LinkedBlockingQueue<>(5);
+        BlockingQueue<ImagenAnalizar> procesadorToSalida = new LinkedBlockingQueue<>(5);
         //se crean los hilos y se pasan los parametros
         Thread t1 = new Thread(new LectorImagenes(lectorToProcesador,listaTest), "Hilo-Lector");
         Thread t2 = new Thread(new ProcesadorMatcher(repositorioPlantilla,lectorToProcesador,procesadorToSalida), "Hilo-Procesador");
